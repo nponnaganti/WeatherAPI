@@ -34,9 +34,9 @@ namespace WeatherInfo.WebAutomation.Pages
         #endregion
 
         [Test]
-        public void AboutUsPage_FooterText()
+        public void AboutUsPage_Test()
         {
-            pageLayers.FooterText(driver);
+            driver.Navigate().GoToUrl(homePageUrl + aboutUs);
         }
     }
 }

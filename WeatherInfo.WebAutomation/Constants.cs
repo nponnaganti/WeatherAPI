@@ -16,5 +16,9 @@ namespace WeatherInfo.WebAutomation
         {
             public const string footerText = "© 2019 - My ASP.NET Application";
         }
+        public static class Header
+        {
+            public const string headerText = "Weather App";
+        }
     }
 }

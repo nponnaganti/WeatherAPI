@@ -10,5 +10,6 @@ namespace WeatherInfo.WebAutomation
     interface IPageLayers
     {
         void FooterText(IWebDriver driver);
+        void HeaderText(IWebDriver driver);
     }
 }

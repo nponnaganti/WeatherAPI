@@ -17,5 +17,13 @@ namespace WeatherInfo.WebAutomation
             string expectedFooterText = Constants.Footer.footerText;
             Assert.AreEqual(actualFooterText, expectedFooterText);
         }
+
+        public void HeaderText(IWebDriver driver)
+        {
+            var header = driver.FindElement(By.XPath("/html/body/div[1]/div/div[1]/a"));
+            var actualFooterText = header.Text;
+            string expectedFooterText = Constants.Header.headerText;
+            Assert.AreEqual(actualFooterText, expectedFooterText);
+        }
     }
 }
