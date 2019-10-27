@@ -13,7 +13,7 @@ namespace WeatherInfo.Controllers
 {
     public class WeatherController : Controller
     {
-
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(WeatherController));
         private ICitiesService _citiesService;
 
         public WeatherController(ICitiesService citiesService)
@@ -24,8 +24,17 @@ namespace WeatherInfo.Controllers
         public ActionResult Index(string q = "sydney")
         {
             var cities = _citiesService.GetCitiesByQuery(q);
-            ViewBag.CityList = cities;
-            return View();
+            
+            if(cities.Count >0)
+            {
+                ViewBag.CityList = cities;
+                return View();
+            }
+            else
+            {
+                return Content("Unauthorized access OR Invalid apiKey");
+            }
+            
         }
         [HttpPost]
         public ActionResult Index(CountryWeather countryWeather)
