@@ -3,14 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Web;
+using System.Web.Configuration;
 using System.Web.Mvc;
 using System.Web.Script.Serialization;
+using WeatherInfo.Controllers.WeatherFactory;
 using WeatherInfo.Models;
 
 namespace WeatherInfo.Controllers
 {
     public class WeatherController : Controller
     {
+
+        private ICitiesService _citiesService;
+        public WeatherController()
+        { 
+        }
+        public WeatherController(ICitiesService citiesService)
+        {
+             _citiesService = citiesService;
+        }
         // GET: Weather
         public ActionResult Index(string q = "sydney")
         {
@@ -21,15 +32,17 @@ namespace WeatherInfo.Controllers
         [HttpPost]
         public ActionResult Index(CountryWeather obj)
         {
+            ICitiesService citiesService = new CitiesService();
             ViewBag.txtQuery = obj.q;
             if (ModelState.IsValid)
             {
-                string appId = "2lDZ55b7flAd9dj7pDIFV8v5jWbfAyLW";
+                string apikey = WebConfigurationManager.AppSettings["WeatherAPIKey"].ToString();
+                var result = _citiesService.GetCitiesByQuery(obj.q);
                 List<SelectListItem> objCitys = GetCitiesByQuery(obj.q);
                 ViewBag.CityList = objCitys;
                 ViewBag.CityListCount = objCitys.Count();
                 int CntVal = Convert.ToInt32(obj.country.Trim());
-                string url = string.Format("http://dataservice.accuweather.com/currentconditions/v1/{0}?apikey={1}&language=en-us&details=false", CntVal,appId);
+                string url = string.Format("http://dataservice.accuweather.com/currentconditions/v1/{0}?apikey={1}&language=en-us&details=false", CntVal, apikey);
                 using (WebClient client = new WebClient())
                 {
                     string json = client.DownloadString(url);
@@ -50,6 +63,7 @@ namespace WeatherInfo.Controllers
             }
             else
             {
+                var result = _citiesService.GetCitiesByQuery(obj.q);
                 List<SelectListItem> objCitys = GetCitiesByQuery(obj.q);
                 ViewBag.CityList = objCitys;
                 ViewBag.CityListCount = objCitys.Count();
@@ -63,8 +77,8 @@ namespace WeatherInfo.Controllers
             
             try
             {
-                string appId = "2lDZ55b7flAd9dj7pDIFV8v5jWbfAyLW";
-                string url = string.Format("http://dataservice.accuweather.com/locations/v1/cities/autocomplete?apikey={0}&q={1}&language=en-us", appId,q);
+                string apikey = WebConfigurationManager.AppSettings["WeatherAPIKey"].ToString();
+                string url = string.Format("http://dataservice.accuweather.com/locations/v1/cities/autocomplete?apikey={0}&q={1}&language=en-us", apikey, q);
                 using (WebClient client = new WebClient())
                 {
                     string json = client.DownloadString(url);
