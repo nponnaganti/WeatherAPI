@@ -15,9 +15,7 @@ namespace WeatherInfo.Controllers
     {
 
         private ICitiesService _citiesService;
-        public WeatherController()
-        { 
-        }
+
         public WeatherController(ICitiesService citiesService)
         {
              _citiesService = citiesService;
@@ -25,33 +23,47 @@ namespace WeatherInfo.Controllers
         // GET: Weather
         public ActionResult Index(string q = "sydney")
         {
-            ViewBag.CityList = GetCitiesByQuery(q);
-            ViewBag.txtQuery = q;
+            var cities = _citiesService.GetCitiesByQuery(q);
+            ViewBag.CityList = cities;
             return View();
         }
         [HttpPost]
-        public ActionResult Index(CountryWeather obj)
+        public ActionResult Index(CountryWeather countryWeather)
         {
-            ICitiesService citiesService = new CitiesService();
-            ViewBag.txtQuery = obj.q;
+            var cities = _citiesService.GetCitiesByQuery(countryWeather.q);
+            ViewBag.CityList = cities;
+            ViewBag.CityListCount = cities.Count();
+            ViewBag.HideTable =  false;
+
             if (ModelState.IsValid)
             {
                 string apikey = WebConfigurationManager.AppSettings["WeatherAPIKey"].ToString();
-                var result = _citiesService.GetCitiesByQuery(obj.q);
-                List<SelectListItem> objCitys = GetCitiesByQuery(obj.q);
-                ViewBag.CityList = objCitys;
-                ViewBag.CityListCount = objCitys.Count();
-                int CntVal = Convert.ToInt32(obj.country.Trim());
-                string url = string.Format("http://dataservice.accuweather.com/currentconditions/v1/{0}?apikey={1}&language=en-us&details=false", CntVal, apikey);
+                string currentConditionsUrl = WebConfigurationManager.AppSettings["WeatherCurrentConditionsUrl"].ToString();
+
+                int CntVal = Convert.ToInt32(countryWeather.country.Trim());
+                //string url = string.Format("http://dataservice.accuweather.com/currentconditions/v1/{0}?apikey={1}&language=en-us&details=false", CntVal, apikey);
+                string url = string.Format(currentConditionsUrl + "{0}?apikey={1}&language={2}&details={3}", CntVal, apikey, "en-us",false);
                 using (WebClient client = new WebClient())
                 {
                     string json = client.DownloadString(url);
                     List<WeatherObject> objweatherInfo = (new JavaScriptSerializer()).Deserialize<List<WeatherObject>>(json);
                     WeatherObject weatherInfo = objweatherInfo[0];
-                    //ViewBag.lblCity_Country = objCitys.Where(x => x.Value == obj.country.Trim()).Select(x => x.Text).FirstOrDefault().ToString();
+                    
+                    string weatherIconsUrl = WebConfigurationManager.AppSettings["WeatherIconsUrl"].ToString();
                     //ViewBag.lblLocalDateTime = DateTime.Parse(weatherInfo.LocalObservationDateTime);
-                    ViewBag.imgWeatherIcon = string.Format("https://www.accuweather.com/images/weathericons/{0}.svg", weatherInfo.WeatherIcon.ToString().ToLower());
-
+                    ViewBag.imgWeatherIcon = string.Format(weatherIconsUrl + "{0}.svg", weatherInfo.WeatherIcon.ToString().ToLower());
+                    if (!String.IsNullOrEmpty(countryWeather.country))
+                    {
+                        var selectedLocation = cities.Where(s => s.Value == countryWeather.country.Trim()).Select(x => x.Text);
+                        if (selectedLocation.Count() > 0)
+                        {
+                            ViewBag.lblCity_Country = selectedLocation.FirstOrDefault();
+                        }
+                        else
+                        {
+                            ViewBag.HideTable = true;
+                        }
+                    }
                     ViewBag.lblText = weatherInfo.WeatherText;
 
                     ViewBag.lblMetric = string.Format("{0}°{1}", Math.Round(weatherInfo.Temperature.Metric.Value, 1), weatherInfo.Temperature.Metric.Unit);
@@ -61,40 +73,7 @@ namespace WeatherInfo.Controllers
                     ViewBag.lblWebLink = weatherInfo.Link;
                 }
             }
-            else
-            {
-                var result = _citiesService.GetCitiesByQuery(obj.q);
-                List<SelectListItem> objCitys = GetCitiesByQuery(obj.q);
-                ViewBag.CityList = objCitys;
-                ViewBag.CityListCount = objCitys.Count();
-                //ViewBag.lblCity_Country = objCitys.Where(x => x.Value == obj.country.Trim()).Select(x => x.Text).FirstOrDefault().ToString();
-            }
-            return View(obj);
-        }
-        public List<SelectListItem> GetCitiesByQuery(string q)
-        {
-            List<SelectListItem> objList = new List<SelectListItem>();
-            
-            try
-            {
-                string apikey = WebConfigurationManager.AppSettings["WeatherAPIKey"].ToString();
-                string url = string.Format("http://dataservice.accuweather.com/locations/v1/cities/autocomplete?apikey={0}&q={1}&language=en-us", apikey, q);
-                using (WebClient client = new WebClient())
-                {
-                    string json = client.DownloadString(url);
-                    List<CityObject> obj = (new JavaScriptSerializer()).Deserialize<List<CityObject>>(json);
-
-                    foreach (var item in obj)
-                    {
-                        objList.Add(new SelectListItem() { Text = item.AdministrativeArea.LocalizedName + ", "+item.Country.LocalizedName, Value = item.Key });
-                    }
-                    return objList;
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-            return objList;
+            return View(countryWeather);
         }
     }
 }

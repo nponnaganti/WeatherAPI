@@ -14,28 +14,36 @@ namespace WeatherInfo.Controllers.WeatherFactory
     {
         public List<SelectListItem> GetCitiesByQuery(string q)
         {
-            List<SelectListItem> objList = new List<SelectListItem>();
+            List<SelectListItem> selectListItems = new List<SelectListItem>();
 
             try
             {
-                string apikey = WebConfigurationManager.AppSettings["WeatherAPIKey"].ToString();
-                string url = string.Format("http://dataservice.accuweather.com/locations/v1/cities/autocomplete?apikey={0}&q={1}&language=en-us", apikey, q);
+                string apiKey = WebConfigurationManager.AppSettings["WeatherAPIKey"].ToString();
+                string autocompleteUrl = WebConfigurationManager.AppSettings["WeatherAutocompleteUrl"].ToString();
+                //string url = string.Format("http://dataservice.accuweather.com/locations/v1/cities/autocomplete?apikey={0}&q={1}&language=en-us", apikey, q);
+                string url = string.Format(autocompleteUrl + "?apikey={0}&q={1}&language={2}", apiKey, q, "en-us");
                 using (WebClient client = new WebClient())
                 {
                     string json = client.DownloadString(url);
-                    List<CityObject> obj = (new JavaScriptSerializer()).Deserialize<List<CityObject>>(json);
 
-                    foreach (var item in obj)
+                    List<CityObject> cities = (new JavaScriptSerializer()).Deserialize<List<CityObject>>(json);
+
+                    foreach (var item in cities)
                     {
-                        objList.Add(new SelectListItem() { Text = item.AdministrativeArea.LocalizedName + ", " + item.Country.LocalizedName, Value = item.Key });
+                        selectListItems.Add(new SelectListItem() { Text = item.AdministrativeArea.LocalizedName + ", " + item.Country.LocalizedName, Value = item.Key });
                     }
-                    return objList;
+                    return selectListItems;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
             }
-            return objList;
+            return selectListItems;
+        }
+
+        public List<SelectListItem> GetCitiesByQueryAndLanguage(string q, string language)
+        {
+            throw new NotImplementedException();
         }
     }
 }
